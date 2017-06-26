@@ -4,8 +4,18 @@ import sys
 import subprocess
 import time
 from numpy import interp
+import rtmidi
  
 # This program parses xev input from stdin for the purpose of midi instrument
+
+class RtMidi:
+  midiout = None
+  def __init__(self):
+    self.midiout = rtmidi.MidiOut()
+    #self.available_ports = midiout.get_ports()
+    self.midiout.open_virtual_port("My virtual output")
+  def send(self, message):
+    self.midiout.send_message(message)
 
 class Key:
   keycode = 0
@@ -62,15 +72,29 @@ class VirtualInstrument:
         for tone in string:
           self.keys.append(Key(ord(tone)))
     def parseKeyEvent(self, keycode, mod, state):
+      if(chr(keycode) == "-"):
+        print("getSize")
+        xW.getSize()
       for key in self.keys:
         if str(key.getKeycode()) == str(keycode):
           if (key.getState != state):
-            key.setState(state)
+            #key.setState(state)
+            if(chr(keycode) in self.eString):
+              note = self.eString.index(chr(keycode))+ self.eStringStart
+            elif(chr(keycode) in self.aString):
+              note = self.aString.index(chr(keycode))+ self.aStringStart
+            elif(chr(keycode) in self.dString):
+              note = self.dString.index(chr(keycode))+ self.dStringStart
+            elif(chr(keycode) in self.gString):
+              note = self.gString.index(chr(keycode))+ self.gStringStart
+            rm.send([0x90, note, state*100])
+            print(note, state)
     def parseMouseEvent(self, x, y):
       if self.axis.setX(x): self.sendMouseEventX()
       if self.axis.setY(y): self.sendMouseEventY()
     def sendMouseEventX(self):
       print("CC11: ", self.axis.getX())
+      rm.send([0xb0, 0x0b, self.axis.getX()])
     def sendMouseEventY(self):
       print("CC5: ", self.axis.getY())
 
@@ -192,4 +216,5 @@ if __name__ == "__main__":
     vI = VirtualInstrument()
     xR = xevReader()
     xP = xevParser()
+    rm = RtMidi()
     main()
