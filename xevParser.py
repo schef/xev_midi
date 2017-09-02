@@ -62,9 +62,9 @@ class VirtualInstrument:
     eString = ["z", "x", "c", "v", "b", "n", "m", ",", ".", "/"]
     strings = [eString, aString, dString, gString]
     eStringStart = 36
-    aStringStart = eStringStart + 7
-    dStringStart = aStringStart + 7
-    gStringStart = dStringStart + 7
+    aStringStart = eStringStart + 5
+    dStringStart = aStringStart + 5
+    gStringStart = dStringStart + 5
     keys = []
     axis = Axis()
     def __init__(self):
