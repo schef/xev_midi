@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
  
+import subprocess
+
 import sys
 import subprocess
 import time
@@ -56,6 +58,7 @@ class Axis:
     return(self.y)
 
 class VirtualInstrument:
+    octave = 4
     gString = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
     dString = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"]
     aString = ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";"]
@@ -75,18 +78,24 @@ class VirtualInstrument:
       if(chr(keycode) == "-"):
         print("getSize")
         xW.getSize()
+      elif(keycode == 65365 and state):
+        self.octave += 1
+        print("octave", self.octave)
+      elif(keycode == 65366 and state):
+        self.octave -= 1
+        print("octave", self.octave)
       for key in self.keys:
         if str(key.getKeycode()) == str(keycode):
           if (key.getState != state):
             #key.setState(state)
             if(chr(keycode) in self.eString):
-              note = self.eString.index(chr(keycode))+ self.eStringStart
+              note = self.eString.index(chr(keycode))+ self.eStringStart + (self.octave * 5)
             elif(chr(keycode) in self.aString):
-              note = self.aString.index(chr(keycode))+ self.aStringStart
+              note = self.aString.index(chr(keycode))+ self.aStringStart + (self.octave * 5)
             elif(chr(keycode) in self.dString):
-              note = self.dString.index(chr(keycode))+ self.dStringStart
+              note = self.dString.index(chr(keycode))+ self.dStringStart + (self.octave * 5)
             elif(chr(keycode) in self.gString):
-              note = self.gString.index(chr(keycode))+ self.gStringStart
+              note = self.gString.index(chr(keycode))+ self.gStringStart + (self.octave * 5)
             rm.send([0x90, note, state*100])
             print(note, state)
     def parseMouseEvent(self, x, y):
@@ -187,13 +196,13 @@ class xevParser:
       mod = (event[2].split()[1][2:-1])
       keycode = (int(event[2].split()[5][2:-1], 16))
       state = 1
-      #print(keycode, mod, state)
+      print("DEBUG:", keycode, mod, state)
       vI.parseKeyEvent(keycode, mod, state)
     elif(event[0].split()[0] == "KeyRelease"):
       mod = (event[2].split()[1][2:-1])
       keycode = (int(event[2].split()[5][2:-1], 16))
       state = 0
-      #print(keycode, mod, state)
+      print("DEBUG:", keycode, mod, state)
       vI.parseKeyEvent(keycode, mod, state)
     elif(event[0].split()[0] == "MotionNotify"):
       pair = event[1].split()[6][1:-2].split(",")
@@ -211,10 +220,16 @@ def main():
 
 if __name__ == "__main__":
     # execute only if run as a script
-    xW = x11Window()
-    xW.getSize()
-    vI = VirtualInstrument()
-    xR = xevReader()
-    xP = xevParser()
-    rm = RtMidi()
-    main()
+    try:
+        process = subprocess.Popen("xset r off".split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        xW = x11Window()
+        xW.getSize()
+        vI = VirtualInstrument()
+        xR = xevReader()
+        xP = xevParser()
+        rm = RtMidi()
+        main()
+    except KeyboardInterrupt:
+        process = subprocess.Popen("xset r on".split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
